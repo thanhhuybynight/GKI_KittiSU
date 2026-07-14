@@ -1,0 +1,97 @@
+name: Auto Trigger on KittiSU Update
+
+on:
+  schedule:
+    - cron: '0 0 */3 * *'
+  workflow_dispatch:
+
+jobs:
+  check-and-trigger:
+    runs-on: ubuntu-latest
+    # Chỉ chạy trên repo của bạn — thêm owner vào list nếu fork
+    if: contains(fromJSON('["thanhhuybynight"]'), github.repository_owner)
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Get latest commit SHA from KittiSU
+        id: get_sha
+        env:
+          KITTISU_REPO: terebiko/KittiSU
+          KITTISU_BRANCH: main
+        run: |
+          LATEST_SHA=$(curl -s "https://api.github.com/repos/${KITTISU_REPO}/commits/${KITTISU_BRANCH}" | jq -r '.sha')
+          if [ -z "$LATEST_SHA" ] || [ "$LATEST_SHA" = "null" ]; then
+            echo "::error::Failed to fetch KittiSU SHA"
+            exit 1
+          fi
+          echo "sha=$LATEST_SHA" >> $GITHUB_OUTPUT
+          echo "Latest SHA: $LATEST_SHA"
+
+      - name: Get previous SHA from sha branch
+        id: get_prev_sha
+        run: |
+          if git ls-remote --heads origin sha | grep -q sha; then
+            echo "SHA branch exists, fetching previous SHA..."
+            git fetch origin sha:sha || true
+            git checkout sha || true
+            if [ -f "latest_sha.txt" ]; then
+              PREV_SHA=$(cat latest_sha.txt)
+              echo "prev_sha=$PREV_SHA" >> $GITHUB_OUTPUT
+              echo "Previous SHA found: $PREV_SHA"
+            else
+              echo "prev_sha=" >> $GITHUB_OUTPUT
+              echo "No previous SHA file found"
+            fi
+          else
+            echo "prev_sha=" >> $GITHUB_OUTPUT
+            echo "SHA branch does not exist yet"
+          fi
+          git checkout ${{ github.ref_name }}
+
+      - name: Compare with previous SHA
+        id: compare
+        run: |
+          CURR_SHA="${{ steps.get_sha.outputs.sha }}"
+          PREV_SHA="${{ steps.get_prev_sha.outputs.prev_sha }}"
+          echo "Current SHA: $CURR_SHA"
+          echo "Previous SHA: $PREV_SHA"
+          if [ "$CURR_SHA" != "$PREV_SHA" ]; then
+            echo "new_commit=true" >> $GITHUB_OUTPUT
+            echo "New commit detected!"
+          else
+            echo "new_commit=false" >> $GITHUB_OUTPUT
+            echo "No new commits"
+          fi
+
+      - name: Update SHA file in sha branch
+        if: steps.compare.outputs.new_commit == 'true'
+        run: |
+          git checkout sha 2>/dev/null || git checkout --orphan sha
+          if [ ! -f "latest_sha.txt" ]; then
+            git rm -rf . 2>/dev/null || true
+          fi
+          echo "${{ steps.get_sha.outputs.sha }}" > latest_sha.txt
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add latest_sha.txt
+          git commit -m "chore: update KittiSU SHA ${{ steps.get_sha.outputs.sha }}" || true
+          git push origin sha --force
+
+      - name: Trigger main kernel build
+        if: steps.compare.outputs.new_commit == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run main.yml \
+            -f kernelsu_variant=KittiSU \
+            -f kittisu_repo=terebiko/KittiSU \
+            -f kittisu_branch=main \
+            -f build_all=true \
+            -f use_zram=false \
+            -f use_bbg=false \
+            -f cancel_susfs=false \
+            -f use_kpm="disabled (关闭)"

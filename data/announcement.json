@@ -1,0 +1,31 @@
+{
+  "items": [
+    {
+      "date": "2026-07-14",
+      "content_md": [
+        "## 🐱 KittiSU GKI Builder",
+        "",
+        "Specialized GKI kernel builder for **[KittiSU](https://github.com/terebiko/KittiSU)** + SUSFS.",
+        "",
+        "Features:",
+        "- Build GKI kernels with KittiSU (custom branch supported)",
+        "- Default repo: `terebiko/KittiSU`",
+        "- Web dashboard for GKI version lookup",
+        "",
+        "👉 [Open the Guide](guide.html)"
+      ],
+      "content_zh_md": [
+        "## 🐱 KittiSU GKI 构建器",
+        "",
+        "专为 **[KittiSU](https://github.com/terebiko/KittiSU)** + SUSFS 打造的 GKI 内核构建站点。",
+        "",
+        "功能：",
+        "- 使用 KittiSU 构建 GKI 内核（支持自定义分支）",
+        "- 默认仓库：`terebiko/KittiSU`",
+        "- 网页端 GKI 版本查询",
+        "",
+        "👉 [打开教程](guide.html)"
+      ]
+    }
+  ]
+}

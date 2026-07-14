@@ -1,0 +1,37 @@
+# ==================== 自定义提交配置 ====================
+# 本文件用于配置 SUSFS 和 KittiSU/SukiSU 仓库的自定义提交
+#
+# 使用说明:
+#   1. 将 custom 设为 true 启用自定义提交功能
+#   2. 在对应配置项后填入想要使用的 commit hash 或 branch 名
+#   3. 留空表示使用该分支的最新提交 / workflow 输入
+#
+# 示例:
+#   gki-android14-6.1=abc123def456
+#   kittisu=feature/my-branch
+#   kittisu_repo=terebiko/KittiSU
+#
+# ================================================================
+
+# 是否启用自定义提交 (true/false)
+# 当 custom=true 时，下面的 kittisu= 会覆盖 workflow 的 kittisu_branch 输入
+custom=false
+
+# ==================== SUSFS 各分支的 commit hash ====================
+# 仅当 custom=true 时生效
+gki-android12-5.10=
+gki-android13-5.15=
+gki-android14-6.1=
+gki-android15-6.6=
+gki-android16-6.12=
+
+# ==================== KittiSU 配置 ====================
+# 仅当 custom=true 且使用 KittiSU 变体时生效
+# kittisu_repo: owner/name，默认 terebiko/KittiSU
+# kittisu: branch 名、tag 或 commit hash
+kittisu_repo=terebiko/KittiSU
+kittisu=
+
+# ==================== SukiSU 的 commit hash ====================
+# 仅当 custom=true 且使用 SukiSU 变体时生效
+sukisu=
