@@ -1263,13 +1263,42 @@ jobs:
           rm -rf "$TMP_REKERNEL"
           git clone --depth 1 https://github.com/Sakion-Team/Re-Kernel.git "$TMP_REKERNEL"
 
-          # 准备驱动源码
           mkdir -p common/drivers/rekernel
-          cp "$TMP_REKERNEL/LKM-Source/rekernel.c" common/drivers/rekernel/
-          cp "$TMP_REKERNEL/LKM-Source/rekernel.h" common/drivers/rekernel/
+          SRC_DIR=""
 
-          # 生成构建配置
-          cat > common/drivers/rekernel/Kconfig << 'EOF'
+          # Upstream layout changed: prefer Integrate/rekernel/ (in-tree ready),
+          # then legacy LKM-Source/rekernel.c, then multi-file LKM-Source.
+          if [ -f "$TMP_REKERNEL/Integrate/rekernel/rekernel.c" ]; then
+            echo "Using Integrate/rekernel sources"
+            SRC_DIR="$TMP_REKERNEL/Integrate/rekernel"
+            cp "$SRC_DIR/rekernel.c" "$SRC_DIR/rekernel.h" common/drivers/rekernel/
+            if [ -f "$SRC_DIR/Kconfig" ]; then
+              cp "$SRC_DIR/Kconfig" common/drivers/rekernel/Kconfig
+            fi
+            if [ -f "$SRC_DIR/Makefile" ]; then
+              cp "$SRC_DIR/Makefile" common/drivers/rekernel/Makefile
+            fi
+          elif [ -f "$TMP_REKERNEL/LKM-Source/rekernel.c" ]; then
+            echo "Using legacy LKM-Source/rekernel.c"
+            cp "$TMP_REKERNEL/LKM-Source/rekernel.c" common/drivers/rekernel/
+            cp "$TMP_REKERNEL/LKM-Source/rekernel.h" common/drivers/rekernel/
+          elif [ -f "$TMP_REKERNEL/LKM-Source/rekernel_main.c" ]; then
+            echo "Using multi-file LKM-Source"
+            cp "$TMP_REKERNEL/LKM-Source/"*.c "$TMP_REKERNEL/LKM-Source/"*.h common/drivers/rekernel/ 2>/dev/null || true
+            # Single object name expected by older Makefiles
+            if [ ! -f common/drivers/rekernel/rekernel.c ] && [ -f common/drivers/rekernel/rekernel_main.c ]; then
+              # Keep multi-file; Makefile lists objects below
+              true
+            fi
+          else
+            echo "Re-Kernel sources not found. Tree:" >&2
+            find "$TMP_REKERNEL" -maxdepth 3 -type f \( -name '*.c' -o -name '*.h' \) | head -50 >&2
+            exit 1
+          fi
+
+          # Kconfig / Makefile fallbacks if not copied from Integrate/
+          if [ ! -f common/drivers/rekernel/Kconfig ]; then
+            cat > common/drivers/rekernel/Kconfig << 'EOF'
           menu "Re:Kernel"
           config REKERNEL
               bool "Re:Kernel support (GKI Vendor Hooks)"
@@ -1283,11 +1312,28 @@ jobs:
               default n
           endmenu
           EOF
+          fi
 
-          cat > common/drivers/rekernel/Makefile << 'EOF'
+          if [ ! -f common/drivers/rekernel/Makefile ]; then
+            if [ -f common/drivers/rekernel/rekernel.c ]; then
+              cat > common/drivers/rekernel/Makefile << 'EOF'
           obj-$(CONFIG_REKERNEL) += rekernel.o
           ccflags-$(CONFIG_REKERNEL_NETWORK) += -DNETWORK_FILTER
           EOF
+            else
+              # multi-file LKM layout
+              cat > common/drivers/rekernel/Makefile << 'EOF'
+          obj-$(CONFIG_REKERNEL) += rekernel_main.o rekernel_binder.o rekernel_signal.o rekernel_netlink.o
+          obj-$(CONFIG_REKERNEL_NETWORK) += rekernel_netfilter.o rekernel_netkill.o
+          ccflags-y += -I$(src)
+          EOF
+            fi
+          else
+            # Ensure network flag when using Integrate Makefile
+            if ! grep -q 'NETWORK_FILTER\|REKERNEL_NETWORK' common/drivers/rekernel/Makefile; then
+              echo 'ccflags-$(CONFIG_REKERNEL_NETWORK) += -DCONFIG_REKERNEL_NETWORK' >> common/drivers/rekernel/Makefile || true
+            fi
+          fi
 
           # 挂载到驱动树
           if ! grep -qF 'source "drivers/rekernel/Kconfig"' common/drivers/Kconfig; then
@@ -1297,21 +1343,26 @@ jobs:
             echo 'obj-$(CONFIG_REKERNEL) += rekernel/' >> common/drivers/Makefile
           fi
 
-          # 启用内核版本宏
+          # 启用内核版本宏（legacy headers）
           REKERNEL_H="common/drivers/rekernel/rekernel.h"
-          VERSION_MACRO="KERNEL_$(echo "${{ inputs.kernel_version }}" | tr '.' '_')"
-          if grep -q "^// #define ${VERSION_MACRO}$" "$REKERNEL_H"; then
-            sed -i "s|^// #define ${VERSION_MACRO}$|#define ${VERSION_MACRO}|" "$REKERNEL_H"
+          if [ -f "$REKERNEL_H" ]; then
+            VERSION_MACRO="KERNEL_$(echo "${{ inputs.kernel_version }}" | tr '.' '_')"
+            if grep -q "^// #define ${VERSION_MACRO}$" "$REKERNEL_H"; then
+              sed -i "s|^// #define ${VERSION_MACRO}$|#define ${VERSION_MACRO}|" "$REKERNEL_H"
+            fi
           fi
 
           # 修正头文件包含路径（适配 in-tree 编译）
-          sed -i 's|#include <../android/binder_internal.h>|#include "../../drivers/android/binder_internal.h"|g' common/drivers/rekernel/rekernel.c
-          # 补齐 binder_internal 依赖（避免 5.10 下 DEFINE_SHOW_ATTRIBUTE 报错）
-          grep -qF '#include <linux/seq_file.h>' common/drivers/rekernel/rekernel.c || sed -i '/#include <trace\/hooks\/signal.h>/a #include <linux/seq_file.h>' common/drivers/rekernel/rekernel.c
+          if [ -f common/drivers/rekernel/rekernel.c ]; then
+            sed -i 's|#include <../android/binder_internal.h>|#include "../../drivers/android/binder_internal.h"|g' common/drivers/rekernel/rekernel.c
+            grep -qF '#include <linux/seq_file.h>' common/drivers/rekernel/rekernel.c || \
+              sed -i '/#include <trace\/hooks\/signal.h>/a #include <linux/seq_file.h>' common/drivers/rekernel/rekernel.c || true
+          fi
 
           # 配置 defconfig（幂等）
           grep -q '^CONFIG_REKERNEL=y$' "$DEFCONFIG" || echo "CONFIG_REKERNEL=y" >> "$DEFCONFIG"
           grep -q '^CONFIG_REKERNEL_NETWORK=y$' "$DEFCONFIG" || echo "CONFIG_REKERNEL_NETWORK=y" >> "$DEFCONFIG"
+          echo "Re-Kernel integrated successfully"
 
       - name: 配置内核选项
         working-directory: ${{ env.KERNEL_ROOT }}
