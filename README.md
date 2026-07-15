@@ -62,6 +62,29 @@ bash scripts/vercel-build.sh
 # hoặc: npm run build
 ```
 
+
+### 2c. Web Build qua Vercel (trigger Actions chủ repo)
+
+Luồng: **Web form → `/api/build` (Vercel) → `kernel-custom.yml` trên repo chủ**.  
+PAT **chỉ** nằm trong Vercel Environment Variables — user không cần token.
+
+1. Deploy project lên Vercel (mục 2b)
+2. **Vercel → Project → Settings → Environment Variables** thêm:
+
+| Name | Value |
+|------|--------|
+| `GH_PAT` | Fine-grained PAT: **Actions: Read and write** trên repo `thanhhuybynight/GKI_KittiSU` |
+| `GITHUB_REPO` | `thanhhuybynight/GKI_KittiSU` (tuỳ chọn, mặc định vậy) |
+| `GITHUB_REF` | `main` (tuỳ chọn) |
+| `BUILD_KEY` | (tuỳ chọn) chuỗi bí mật chống spam; nếu set, thêm cùng giá trị vào `web/js/config.js` → `buildKey` |
+
+3. Redeploy sau khi set env
+4. Mở site → tab **Web Build** → **Bắt đầu build**
+
+API:
+- `POST /api/build` — trigger workflow
+- `GET /api/runs` — lịch sử (dùng PAT server-side nếu có)
+
 ---
 ### 3. Build kernel
 

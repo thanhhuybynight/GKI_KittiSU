@@ -4,6 +4,7 @@
 
 import { t } from './i18n.js';
 import { esc } from './utils.js';
+import { prefillBuild } from './build-ui.js';
 
 var modal = document.getElementById('modal');
 var modalTitle = document.getElementById('modalTitle');
@@ -44,6 +45,8 @@ export function showModal(android, kernel, sublevel, patch) {
   var kittisuBranch = 'main';
   var kittisuSetup = 'curl -LSs "https://raw.githubusercontent.com/' + kittisuRepo + '/main/kernel/setup.sh" | bash -s ' + kittisuBranch;
 
+  var versionHint = kernel + (sublevel && sublevel !== 'X' ? '.' + sublevel : '') + '-' + patch;
+
   modalBody.innerHTML =
     modalRow(t.modalAndroid, android) +
     modalRow(t.modalKernel, kernel) +
@@ -56,8 +59,24 @@ export function showModal(android, kernel, sublevel, patch) {
     modalRow(t.modalKittisuBranch || 'Branch', kittisuBranch, true) +
     modalRow('Setup', kittisuSetup, true) +
     '<div class="modal-section">' + esc(t.modalSectionSusfs) + '</div>' +
-    modalRow(t.modalSusfsClone, susfsCloneCmd, true);
+    modalRow(t.modalSusfsClone, susfsCloneCmd, true) +
+    '<button type="button" class="modal-build-btn" id="modalBuildBtn" data-kernel="' +
+      esc(kernel) + '" data-patch="' + esc(patch) + '" data-version="' + esc(versionHint) + '">' +
+      (t.buildThisVersion || 'Build this version') +
+    '</button>';
   modal.style.display = '';
+
+  var buildBtn = document.getElementById('modalBuildBtn');
+  if (buildBtn) {
+    buildBtn.addEventListener('click', function () {
+      hideModal();
+      prefillBuild({
+        kernel: buildBtn.dataset.kernel,
+        patch: buildBtn.dataset.patch,
+        version: buildBtn.dataset.version,
+      });
+    });
+  }
 }
 
 export function hideModal() {

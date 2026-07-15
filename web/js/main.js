@@ -17,6 +17,7 @@ import { showToast } from './toast.js';
 import { copyText, fetchJsonFresh } from './utils.js';
 import { DATA_FILES } from './config.js';
 import { renderTabs, renderPanels, animateCounters, initRipple } from './render.js';
+import { initBuildUi, setKernelDataCache, prefillBuild } from './build-ui.js';
 
 // 初始化各模块
 initI18n();
@@ -25,6 +26,7 @@ initModal();
 initSearch();
 initTimeConverter();
 initBackToTop();
+initBuildUi();
 
 // ESC 关闭所有弹窗
 document.addEventListener('keydown', function (e) {
@@ -69,16 +71,30 @@ async function loadData() {
     return;
   }
 
+  setKernelDataCache(datasets);
   renderTabs(datasets);
   renderPanels(datasets);
   initRipple();
 
-  // 激活第一个标签页并触发计数动画
-  var firstTab = document.querySelector('.tab');
-  if (firstTab) {
-    firstTab.click();
-    var firstPanel = document.querySelector('.tab-panel.active');
-    if (firstPanel) animateCounters(firstPanel);
+  var params = new URLSearchParams(location.search);
+  if (params.get('build') === '1' || params.get('kernel')) {
+    prefillBuild({
+      kernel: params.get('kernel') || undefined,
+      patch: params.get('patch') || undefined,
+      version: params.get('version') || undefined,
+    });
+  } else {
+    var buildTab = document.querySelector('.tab[data-panel="panel-build"]');
+    if (buildTab) {
+      buildTab.click();
+    } else {
+      var firstTab = document.querySelector('.tab');
+      if (firstTab) {
+        firstTab.click();
+        var firstPanel = document.querySelector('.tab-panel.active');
+        if (firstPanel) animateCounters(firstPanel);
+      }
+    }
   }
 }
 

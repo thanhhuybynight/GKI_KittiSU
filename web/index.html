@@ -49,6 +49,74 @@
     <div class="tabs" id="tabs"></div>
   </nav>
 
+  <!-- Web Build: Vercel /api/build → owner GitHub Actions -->
+  <section class="build-panel tab-panel" id="panel-build">
+    <div class="build-card">
+      <h2 class="build-card-title" id="buildPanelTitle">Web Build</h2>
+      <p class="build-card-desc" id="buildPanelDesc">Trigger a kernel build on the owner’s GitHub Actions.</p>
+      <div class="build-how">
+        <div class="build-section-title" id="buildHowTitle" style="margin:0 0 0.5rem;padding:0;border:0;">How it works</div>
+        <div class="build-hint" id="buildHowBody"></div>
+      </div>
+      <form id="buildForm">
+        <div class="build-section-title">Kernel</div>
+        <div class="build-grid">
+          <div class="build-field">
+            <label class="build-label" id="buildKernelLabel" for="buildKernel">Kernel</label>
+            <select class="build-select" id="buildKernel" required></select>
+          </div>
+          <div class="build-field">
+            <label class="build-label" id="buildPatchLabel" for="buildPatch">Security patch / LTS</label>
+            <select class="build-select" id="buildPatch" required></select>
+          </div>
+          <div class="build-field">
+            <label class="build-label" id="buildVariantLabel" for="buildVariant">Variant</label>
+            <select class="build-select" id="buildVariant"></select>
+          </div>
+          <div class="build-field">
+            <label class="build-label" id="buildVersionLabel" for="buildVersionName">Version name</label>
+            <input class="build-input" id="buildVersionName" type="text" placeholder="optional" autocomplete="off">
+          </div>
+          <div class="build-field">
+            <label class="build-label" id="buildKittisuRepoLabel" for="buildKittisuRepo">KittiSU repo</label>
+            <input class="build-input" id="buildKittisuRepo" type="text" autocomplete="off" spellcheck="false">
+          </div>
+          <div class="build-field">
+            <label class="build-label" id="buildKittisuBranchLabel" for="buildKittisuBranch">KittiSU branch</label>
+            <input class="build-input" id="buildKittisuBranch" type="text" autocomplete="off" spellcheck="false">
+          </div>
+          <div class="build-field">
+            <label class="build-label" id="buildKpmLabel" for="buildKpm">KPM</label>
+            <select class="build-select" id="buildKpm"></select>
+          </div>
+          <div class="build-field">
+            <label class="build-label" id="buildArtifactLabel" for="buildArtifact">Artifacts</label>
+            <select class="build-select" id="buildArtifact"></select>
+          </div>
+        </div>
+        <div class="build-section-title">Features</div>
+        <div class="build-toggles">
+          <label class="build-check"><input type="checkbox" id="buildSusfs" checked> <span id="buildSusfsLabel">SUSFS</span></label>
+          <label class="build-check"><input type="checkbox" id="buildZram"> <span id="buildZramLabel">ZRAM</span></label>
+          <label class="build-check"><input type="checkbox" id="buildBbg"> <span id="buildBbgLabel">BBG</span></label>
+          <label class="build-check"><input type="checkbox" id="buildRekernel"> <span id="buildRekernelLabel">Re-Kernel</span></label>
+        </div>
+        <div class="build-actions-row">
+          <button type="submit" class="build-btn build-btn--primary" id="buildSubmit">Start build</button>
+          <a class="build-btn" id="buildOpenActions" href="#" target="_blank" rel="noopener">Actions</a>
+        </div>
+        <div class="build-status" id="buildStatus"></div>
+      </form>
+    </div>
+    <div class="build-card">
+      <div class="build-history-head">
+        <h2 class="build-card-title" id="buildHistoryTitle" style="margin:0;">Build history</h2>
+        <button type="button" class="build-btn" id="buildRefreshHistory">Refresh</button>
+      </div>
+      <div class="build-history-list" id="buildHistoryList"></div>
+    </div>
+  </section>
+
   <!-- Announcement Modal -->
   <div class="modal-overlay announce-overlay" id="announceModal" style="display:none;">
     <div class="modal-card announce-card">

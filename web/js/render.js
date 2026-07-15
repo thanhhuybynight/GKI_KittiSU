@@ -18,6 +18,14 @@ export function renderTabs(datasets) {
   indicator.className = 'tab-indicator';
   tabsEl.appendChild(indicator);
 
+  // Web Build first
+  var buildBtn = document.createElement('button');
+  buildBtn.className = 'tab tab--build';
+  buildBtn.textContent = t.buildTab || 'Web Build';
+  buildBtn.dataset.panel = 'panel-build';
+  buildBtn.addEventListener('click', function () { activateTab(buildBtn); });
+  tabsEl.appendChild(buildBtn);
+
   datasets.forEach(function (ds, idx) {
     var btn = document.createElement('button');
     btn.className = 'tab';
@@ -29,11 +37,19 @@ export function renderTabs(datasets) {
 }
 
 function activateTab(btn) {
-  document.querySelectorAll('.tab').forEach(function (t) { t.classList.remove('active'); });
+  document.querySelectorAll('.tab').forEach(function (el) { el.classList.remove('active'); });
   document.querySelectorAll('.tab-panel').forEach(function (p) { p.classList.remove('active'); });
   btn.classList.add('active');
   var panel = document.getElementById(btn.dataset.panel);
-  if (panel) panel.classList.add('active');
+  var main = document.getElementById('content');
+  if (panel) {
+    panel.classList.add('active');
+    if (panel.id === 'panel-build') {
+      if (main) main.style.display = 'none';
+    } else {
+      if (main) main.style.display = '';
+    }
+  }
   moveIndicator(btn);
 }
 

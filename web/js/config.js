@@ -11,6 +11,17 @@ export const DATA_FILES = [
   { android: 'android16', kernel: '6.12', label: 'android16 / 6.12', deprecatedCutoff: '' },
 ];
 
+// Web Build → Vercel API → owner GitHub Actions
+// PAT is ONLY on Vercel (GH_PAT). Never put it in the frontend.
+export const BUILD_CONFIG = {
+  defaultRepo: 'thanhhuybynight/GKI_KittiSU',
+  workflowFile: 'kernel-custom.yml',
+  defaultKittisuRepo: 'terebiko/KittiSU',
+  buildApiPath: '/api/build',
+  // Only if you also set BUILD_KEY on Vercel (optional anti-spam)
+  buildKey: '',
+};
+
 // 运行时缓存键（每次加载页面生成新的，防止缓存）
 export var RUNTIME_CACHE_KEY = Date.now().toString(36);
 
