@@ -1364,28 +1364,16 @@ jobs:
               echo "Patching rekernel proc_ops for GKI kernels..."
               grep -qF '#include <linux/proc_fs.h>' common/drivers/rekernel/rekernel.c || \
                 sed -i '0,/#include /s//#include <linux\/proc_fs.h>\n&/' common/drivers/rekernel/rekernel.c || true
-
-              python3 - <<'PY'
-import re
-from pathlib import Path
-p = Path("common/drivers/rekernel/rekernel.c")
-text = p.read_text(encoding="utf-8", errors="replace")
-repl = """static const struct proc_ops rekernel_unit_fops = {
-	.proc_open = rekernel_unit_open,
-	.proc_read = seq_read,
-	.proc_lseek = seq_lseek,
-	.proc_release = single_release,
-};"""
-pat = re.compile(
-    r"static\s+const\s+struct\s+file_operations\s+rekernel_unit_fops\s*=\s*\{.*?\};",
-    re.S,
-)
-text2, n = pat.subn(repl, text, count=1)
-if n != 1:
-    raise SystemExit(f"Could not patch rekernel_unit_fops (matches={n})")
-p.write_text(text2, encoding="utf-8")
-print("rekernel_unit_fops -> proc_ops OK")
-PY
+              # GKI uses proc_ops; keep patch pure-sed to avoid YAML heredoc issues
+              sed -i \
+                -e 's/struct file_operations rekernel_unit_fops/struct proc_ops rekernel_unit_fops/g' \
+                -e 's/\.open = rekernel_unit_open,/.proc_open = rekernel_unit_open,/g' \
+                -e 's/\.read = seq_read,/.proc_read = seq_read,/g' \
+                -e 's/\.llseek = seq_lseek,/.proc_lseek = seq_lseek,/g' \
+                -e 's/\.release = single_release/.proc_release = single_release/g' \
+                common/drivers/rekernel/rekernel.c
+              grep -q 'struct proc_ops rekernel_unit_fops' common/drivers/rekernel/rekernel.c
+              echo "rekernel_unit_fops -> proc_ops OK"
             fi
           fi
 
