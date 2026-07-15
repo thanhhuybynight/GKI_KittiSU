@@ -1,0 +1,13 @@
+{
+  "name": "gki-kittisu",
+  "version": "1.0.0",
+  "private": true,
+  "description": "GKI KittiSU — site deploy (Vercel / local)",
+  "scripts": {
+    "build": "bash scripts/vercel-build.sh",
+    "build:web": "npm run build --prefix web"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -41,6 +41,28 @@ git push -u origin main
 
 Site sẽ nằm tại: `https://<USER>.github.io/GKI_KittiSU/`
 
+### 2b. Deploy lên Vercel
+
+1. Vào [vercel.com](https://vercel.com) → **Add New Project** → import `thanhhuybynight/GKI_KittiSU`
+2. Giữ cấu hình mặc định trong repo (`vercel.json` đã có sẵn):
+   - **Install:** `cd web && npm ci`
+   - **Build:** `bash scripts/vercel-build.sh`
+   - **Output:** `web`
+3. **Deploy** → nhận URL dạng `https://gki-kittisu-xxx.vercel.app`
+4. (Tuỳ chọn) gắn custom domain trong Vercel → Settings → Domains
+
+Build script sẽ:
+- `webpack` → `web/dist/`
+- copy `data/` → `web/data/` (JSON version GKI)
+
+Local thử build:
+
+```bash
+bash scripts/vercel-build.sh
+# hoặc: npm run build
+```
+
+---
 ### 3. Build kernel
 
 **Cách A — Custom (một version cụ thể)**  

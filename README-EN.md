@@ -40,6 +40,18 @@ kittisu_repo=terebiko/KittiSU
 kittisu=feature/my-branch
 ```
 
+
+### Deploy on Vercel
+
+1. Import this repo on [vercel.com](https://vercel.com)
+2. Use the committed `vercel.json` (install/build/output are preconfigured)
+3. Deploy — site root is `web/` after `scripts/vercel-build.sh` (webpack + copy `data/`)
+
+```bash
+bash scripts/vercel-build.sh   # local dry-run
+```
+
+
 ---
 
 ## Links

@@ -1,0 +1,24 @@
+# Keep deploys small — only the static site needs to be built/served
+.github/
+.claude/
+.gemini/
+.idea/
+.vscode/
+
+# Kernel / workflow assets not needed for the website
+zram/
+assets/
+config/
+hmbird_patch.c
+*.mp4
+*.png
+
+# Local / IDE noise
+node_modules/
+web/node_modules/
+web/dist/
+web/data/
+.git/
+
+# Docs (optional; remove these lines if you want them on the deployment)
+# *.md
